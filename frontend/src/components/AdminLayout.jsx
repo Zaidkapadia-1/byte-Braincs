@@ -5,6 +5,7 @@ const nav = [
   { to: '/admin/teams', label: 'Teams', icon: '◈' },
   { to: '/admin/tasks', label: 'Tasks', icon: '◉' },
   { to: '/admin/transactions', label: 'Ledger', icon: '◎' },
+  { to: '/admin/analytics', label: 'Analytics', icon: '▥' },
 ];
 
 export default function AdminLayout() {
@@ -12,9 +13,9 @@ export default function AdminLayout() {
   const admin = JSON.parse(localStorage.getItem('bb_admin') || '{}');
 
   function logout() {
-    localStorage.removeItem('bb_token');
+    localStorage.removeItem('bb_admin_token');
     localStorage.removeItem('bb_admin');
-    navigate('/admin/login');
+    navigate('/login');
   }
 
   return (

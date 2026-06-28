@@ -68,6 +68,8 @@ export default function Landing() {
                 onClick={() => {
                   localStorage.removeItem('bb_participant_token');
                   localStorage.removeItem('bb_participant');
+                  localStorage.removeItem('bb_team_token');
+                  localStorage.removeItem('bb_team');
                   window.location.reload();
                 }}
               >

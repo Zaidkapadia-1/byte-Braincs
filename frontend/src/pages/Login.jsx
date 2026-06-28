@@ -8,17 +8,45 @@ export default function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  function setField(f, v) { setForm(prev => ({ ...prev, [f]: v })); setError(''); }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
-      const res = await api.post('/participant/login', form);
+      // Try admin login first
+      try {
+        const adminRes = await api.post('/auth/login', { email: form.email, password: form.password });
+        if (adminRes.data?.role === 'admin') {
+          localStorage.removeItem('bb_participant_token');
+          localStorage.removeItem('bb_participant');
+          localStorage.removeItem('bb_team_token');
+          localStorage.removeItem('bb_team');
+
+          localStorage.setItem('bb_admin_token', adminRes.data.token);
+          localStorage.setItem('bb_admin', JSON.stringify({ email: adminRes.data.email, role: 'admin' }));
+          navigate('/admin');
+          return;
+        }
+      } catch {
+        // Not admin — fall through to participant login
+      }
+
+      // Participant login
+      const res = await api.post('/participant/login', { email: form.email, password: form.password });
+      
+      localStorage.removeItem('bb_admin_token');
+      localStorage.removeItem('bb_admin');
+      localStorage.removeItem('bb_team_token');
+      localStorage.removeItem('bb_team');
+
       localStorage.setItem('bb_participant_token', res.data.token);
       localStorage.setItem('bb_participant', JSON.stringify({ name: res.data.name, email: res.data.email }));
       navigate('/register');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+      setError(err.response?.data?.error || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -32,8 +60,10 @@ export default function Login() {
           Byte<span style={{ color: 'var(--secondary)' }}>Brainiacs</span>
         </Link>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link to="/team-login" className="btn btn-ghost btn-sm">Team Login</Link>
+          <span style={{ fontSize: 12, color: 'var(--ink-secondary)' }}>|</span>
           <span style={{ fontSize: 12, color: 'var(--ink-secondary)' }}>New here?</span>
-          <Link to="/signup" className="btn btn-dark btn-sm">Sign Up</Link>
+          <Link to="/signup" className="btn btn-primary btn-sm">Sign Up</Link>
         </div>
       </nav>
 
@@ -42,11 +72,11 @@ export default function Login() {
         <div style={{ width: '100%', maxWidth: 400 }}>
           <div style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--label-muted)', marginBottom: 10 }}>
-              Participant Portal
+              Portal Login
             </div>
             <h1 style={{ fontSize: 30 }}>Welcome Back</h1>
             <p className="text-muted" style={{ marginTop: 6, fontSize: 13 }}>
-              Sign in to access the team registration form.
+              Sign in as a participant or admin — same login.
             </p>
           </div>
 
@@ -61,7 +91,7 @@ export default function Login() {
                     className="input"
                     placeholder="Enter your email"
                     value={form.email}
-                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                    onChange={e => setField('email', e.target.value)}
                     required
                     autoFocus
                   />
@@ -74,7 +104,7 @@ export default function Login() {
                     className="input"
                     placeholder="Enter your password"
                     value={form.password}
-                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                    onChange={e => setField('password', e.target.value)}
                     required
                   />
                 </div>
@@ -94,7 +124,14 @@ export default function Login() {
             </form>
           </div>
 
-          <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--ink-secondary)' }}>
+          <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--ink-secondary)' }}>
+            Are you a team member?{' '}
+            <Link to="/team-login" style={{ color: 'var(--secondary)', textDecoration: 'none', fontWeight: 600 }}>
+              Access Team Dashboard →
+            </Link>
+          </p>
+
+          <p style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--ink-secondary)' }}>
             Don't have an account?{' '}
             <Link to="/signup" style={{ color: 'var(--secondary)', textDecoration: 'none', fontWeight: 500 }}>
               Sign Up

@@ -10,7 +10,7 @@ const teamSchema = new mongoose.Schema({
   teamCode: {
     type: String,
     unique: true,
-    required: true,
+    sparse: true,   // allows null until approved
     uppercase: true
   },
   teamName: {
@@ -20,16 +20,16 @@ const teamSchema = new mongoose.Schema({
   },
   registrationType: {
     type: String,
-    enum: ['team', 'individual'],
+    enum: ['team', 'solo', 'individual'],
     required: true
   },
   members: {
     type: [memberSchema],
     validate: {
       validator: function (v) {
-        return v.length === 1 || v.length === 3;
+        return v.length >= 1 && v.length <= 4;
       },
-      message: 'A registration must have exactly 1 or 3 members.'
+      message: 'A team must have 1 to 4 members.'
     }
   },
   department: {
@@ -54,12 +54,37 @@ const teamSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['verified', 'pending', 'flagged'],
+    enum: ['pending', 'approved', 'rejected', 'verified', 'flagged'],
     default: 'pending'
   },
-  adminNotified: {
+  rejectionReason: {
+    type: String,
+    default: ''
+  },
+  approvedAt: {
+    type: Date
+  },
+  referredBy: {
+    type: String,
+    default: null
+  },
+  // Solo teaming fields
+  soloTeamFormed: {
     type: Boolean,
     default: false
+  },
+  formedTeamCode: {
+    type: String,
+    default: null
+  },
+  // Team dashboard shared password (hashed)
+  teamPassword: {
+    type: String,
+    default: null
+  },
+  plainPassword: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true
@@ -67,5 +92,6 @@ const teamSchema = new mongoose.Schema({
 
 teamSchema.index({ contactEmail: 1 });
 teamSchema.index({ registrationType: 1 });
+teamSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Team', teamSchema);

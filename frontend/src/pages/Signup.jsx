@@ -2,8 +2,40 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
+const BLOCKED_DOMAINS = [
+  'test.com', 'fake.com', 'example.com', 'mailinator.com',
+  'guerrillamail.com', 'trashmail.com', 'tempmail.com', 'yopmail.com'
+];
+
+function validateForm({ name, email, phone, password, confirm }) {
+  if (!name.trim() || name.trim().length < 2)
+    return 'Enter your full name (at least 2 characters).';
+
+  const emailLower = email.toLowerCase();
+  const domain = emailLower.split('@')[1] || '';
+  if (BLOCKED_DOMAINS.includes(domain))
+    return 'Please use a real email address.';
+  if (/^(test|fake|sample|dummy|abc|xyz|asdf|qwerty)\d*@/i.test(emailLower))
+    return 'Please use a real email address.';
+
+  const phoneClean = phone.replace(/\D/g, '');
+  if (phoneClean.length < 10)
+    return 'Enter a valid 10-digit phone number.';
+
+  if (password.length < 8)
+    return 'Password must be at least 8 characters.';
+  if (!/[A-Z]/.test(password))
+    return 'Password must contain at least one uppercase letter.';
+  if (!/[0-9]/.test(password))
+    return 'Password must contain at least one number.';
+  if (password !== confirm)
+    return 'Passwords do not match.';
+
+  return null;
+}
+
 export default function Signup() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -13,21 +45,23 @@ export default function Signup() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (form.password !== form.confirm) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
+
+    const validationError = validateForm(form);
+    if (validationError) { setError(validationError); return; }
+
     setLoading(true);
     try {
       const res = await api.post('/participant/signup', {
-        name: form.name,
-        email: form.email,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
         password: form.password,
       });
+      localStorage.removeItem('bb_admin_token');
+      localStorage.removeItem('bb_admin');
+      localStorage.removeItem('bb_team_token');
+      localStorage.removeItem('bb_team');
+
       localStorage.setItem('bb_participant_token', res.data.token);
       localStorage.setItem('bb_participant', JSON.stringify({ name: res.data.name, email: res.data.email }));
       navigate('/register');
@@ -53,7 +87,7 @@ export default function Signup() {
 
       {/* Form */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ width: '100%', maxWidth: 440 }}>
           <div style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--label-muted)', marginBottom: 10 }}>
               Participant Portal
@@ -67,6 +101,7 @@ export default function Signup() {
           <div className="card">
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
                 <div className="input-wrap">
                   <label className="input-label">Full Name</label>
                   <input
@@ -79,18 +114,33 @@ export default function Signup() {
                     autoFocus
                   />
                 </div>
+
                 <div className="input-wrap">
                   <label className="input-label">Email</label>
                   <input
                     id="signup-email"
                     type="email"
                     className="input"
-                    placeholder="Enter your email"
+                    placeholder="Enter your college/real email"
                     value={form.email}
                     onChange={e => setField('email', e.target.value)}
                     required
                   />
                 </div>
+
+                <div className="input-wrap">
+                  <label className="input-label">Phone Number</label>
+                  <input
+                    id="signup-phone"
+                    type="tel"
+                    className="input"
+                    placeholder="10-digit phone number"
+                    value={form.phone}
+                    onChange={e => setField('phone', e.target.value)}
+                    required
+                  />
+                </div>
+
                 <div className="form-grid">
                   <div className="input-wrap">
                     <label className="input-label">Password</label>
@@ -98,7 +148,7 @@ export default function Signup() {
                       id="signup-password"
                       type="password"
                       className="input"
-                      placeholder="Min 6 characters"
+                      placeholder="Min 8 chars, 1 uppercase, 1 number"
                       value={form.password}
                       onChange={e => setField('password', e.target.value)}
                       required
@@ -117,7 +167,13 @@ export default function Signup() {
                     />
                   </div>
                 </div>
+
               </div>
+
+              {/* password hint */}
+              <p style={{ fontSize: 10, color: 'var(--label-muted)', marginTop: 8, lineHeight: 1.6 }}>
+                Password must be 8+ characters with at least one uppercase letter and one number.
+              </p>
 
               {error && <div className="alert alert-error" style={{ marginTop: 14 }}>{error}</div>}
 

@@ -16,6 +16,12 @@ export default function AdminTasks() {
   const [approveLoading, setApproveLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState(null); // { message: '...', type: 'success' | 'error' }
+
+  function showToast(msg, type = 'success') {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   async function fetchAll() {
     setLoading(true);
@@ -59,8 +65,10 @@ export default function AdminTasks() {
       if (!payload.deadline) delete payload.deadline;
       if (editId) {
         await api.put(`/tasks/${editId}`, payload);
+        showToast('Task updated successfully!');
       } else {
         await api.post('/tasks', payload);
+        showToast('Task created successfully!');
       }
       setModal(null);
       fetchAll();
@@ -73,13 +81,23 @@ export default function AdminTasks() {
 
   async function handleDelete(id) {
     if (!confirm('Delete this task?')) return;
-    await api.delete(`/tasks/${id}`);
-    fetchAll();
+    try {
+      await api.delete(`/tasks/${id}`);
+      showToast('Task deleted successfully!');
+      fetchAll();
+    } catch (err) {
+      showToast('Failed to delete task', 'error');
+    }
   }
 
   async function handleToggleStatus(t) {
-    await api.put(`/tasks/${t._id}`, { status: t.status === 'active' ? 'inactive' : 'active' });
-    fetchAll();
+    try {
+      await api.put(`/tasks/${t._id}`, { status: t.status === 'active' ? 'inactive' : 'active' });
+      showToast(`Task ${t.status === 'active' ? 'deactivated' : 'activated'} successfully!`);
+      fetchAll();
+    } catch (err) {
+      showToast('Failed to toggle status', 'error');
+    }
   }
 
   async function handleApprove(e) {
@@ -88,12 +106,13 @@ export default function AdminTasks() {
     setApproveLoading(true);
     try {
       await api.post(`/tasks/${approveTask._id}/approve/${approveTeam}`);
+      showToast('Task completion approved successfully!');
       setModal(null);
       setApproveTask(null);
       setApproveTeam('');
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to approve');
+      showToast(err.response?.data?.error || 'Failed to approve', 'error');
     } finally {
       setApproveLoading(false);
     }
@@ -283,7 +302,7 @@ export default function AdminTasks() {
                   required
                 >
                   <option value="">-- Select Team --</option>
-                  {teams.map(t => (
+                  {teams.filter(t => t.status === 'approved').map(t => (
                     <option key={t._id} value={t._id}>
                       {t.teamCode} — {t.teamName} ({t.byteCoins} ₿C)
                     </option>
@@ -304,6 +323,23 @@ export default function AdminTasks() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 300,
+          background: toast.type === 'success' ? '#122a1e' : '#2d1414',
+          border: `1px solid ${toast.type === 'success' ? 'var(--success)' : 'var(--error)'}`,
+          color: toast.type === 'success' ? '#68d391' : '#fc8181',
+          padding: '12px 20px', borderRadius: 'var(--radius)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          animation: 'slideIn 0.3s ease-out',
+        }}>
+          <span style={{ fontSize: 16 }}>{toast.type === 'success' ? '✓' : '✕'}</span>
+          <span style={{ fontSize: 12, fontWeight: 500, fontFamily: 'var(--font)' }}>{toast.message}</span>
         </div>
       )}
     </div>

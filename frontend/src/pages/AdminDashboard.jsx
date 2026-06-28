@@ -15,8 +15,8 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const { totalTeams = 0, totalIndividuals = 0, totalParticipants = 0, topTeams = [], recentRegs = [], trend = [] } = stats || {};
-  const totalRegistrations = totalTeams + totalIndividuals;
+  const { totalTeams = 0, totalSolo = 0, totalParticipants = 0, topTeams = [], recentRegs = [], trend = [] } = stats || {};
+  const totalRegistrations = totalTeams + totalSolo;
 
   return (
     <div>
@@ -27,9 +27,9 @@ export default function AdminDashboard() {
 
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
-        <StatCard label="Total Registrations" value={totalRegistrations} sub="teams + individuals" />
-        <StatCard label="Team Entries" value={totalTeams} sub="3-member teams" />
-        <StatCard label="Individuals" value={totalIndividuals} sub="solo participants" accent />
+        <StatCard label="Total Registrations" value={totalRegistrations} sub="teams + solo" />
+        <StatCard label="Team Entries" value={totalTeams} sub="4-member teams" />
+        <StatCard label="Solo Operatives" value={totalSolo} sub="individual participants" accent />
         <StatCard label="Total Participants" value={totalParticipants} sub="across all entries" />
       </div>
 
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
                       <div className="text-muted text-xs">{t.teamCode}</div>
                     </td>
                     <td>
-                      <span className={`chip ${t.registrationType === 'individual' ? 'rust' : 'outline'}`}>
+                      <span className={`chip ${t.registrationType === 'solo' ? 'rust' : 'outline'}`}>
                         {t.registrationType}
                       </span>
                     </td>
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
                       {r.teamCode} · {new Date(r.createdAt).toLocaleDateString('en-IN')}
                     </div>
                   </div>
-                  <span className={`chip ${r.registrationType === 'individual' ? 'rust' : ''}`}>
+                  <span className={`chip ${r.registrationType === 'solo' ? 'rust' : ''}`}>
                     {r.registrationType}
                   </span>
                 </div>
@@ -126,9 +126,9 @@ function StatCard({ label, value, sub, accent }) {
 function Sparkbar({ data }) {
   const max = Math.max(...data.map(d => d.count), 1);
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 80 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 80, overflowX: 'auto', paddingBottom: 4 }}>
       {data.map(d => (
-        <div key={d._id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <div key={d._id} style={{ width: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
           <div
             style={{
               width: '100%',

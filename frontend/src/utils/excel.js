@@ -5,7 +5,7 @@ export function exportTeamsToExcel(teams) {
     'S.No': i + 1,
     'Team Code': t.teamCode,
     'Team Name': t.teamName,
-    'Type': t.registrationType === 'individual' ? 'Individual' : 'Team',
+    'Type': t.registrationType === 'solo' ? 'Solo' : 'Team',
     'Member 1 Name': t.members[0]?.name || '',
     'Member 1 Email': t.members[0]?.email || '',
     'Member 1 Phone': t.members[0]?.phone || '',
